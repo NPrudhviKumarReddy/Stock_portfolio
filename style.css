@@ -1,0 +1,138 @@
+/* ===========================
+   Global Body + Fonts
+   =========================== */
+body {
+  font-family: 'Inter', sans-serif;
+  background: #f8f9fa;
+  color: #333;
+}
+
+h5 {
+  font-weight: 600;
+}
+
+/* ===========================
+   Dark Mode
+   =========================== */
+body.dark-mode {
+  background: #181a1b;
+  color: #e9ecef;
+}
+
+body.dark-mode .navbar {
+  background: #111315 !important;
+}
+
+body.dark-mode table,
+body.dark-mode .container {
+  background: #1e1e1e;
+  color: #ddd;
+}
+
+/* ===========================
+   Drop Zone
+   =========================== */
+#dropZone {
+  cursor: pointer;
+  background: #ffffff;
+  transition: 0.3s ease;
+  border-style: dashed !important;
+  border-width: 2px;
+  font-weight: 500;
+  color: #6c757d;
+}
+
+#dropZone:hover,
+#dropZone.dragover {
+  background: #e9f7ff;
+  border-color: #0d6efd;
+}
+
+/* ===========================
+   Summary Cards
+   =========================== */
+.summary-card {
+  border-radius: 0.65rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+.summary-card .card-body {
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+/* ===========================
+   Pie Chart Container
+   =========================== */
+.chart-container {
+  background: #ffffff;
+  border-radius: 0.65rem;
+  padding: 1rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+/* ===========================
+   Table
+   =========================== */
+#portfolioTable th {
+  cursor: pointer;
+  background: #343a40;
+}
+
+#portfolioTable th:hover {
+  background: #495057;
+}
+
+#portfolioTable tbody tr:hover {
+  background: #f1f3f5;
+}
+
+/* Gain & Loss Badges */
+.badge-gain {
+  background: #28a745;
+  color: #fff;
+}
+
+.badge-loss {
+  background: #dc3545;
+  color: #fff;
+}
+
+/* ===========================
+   Sector Summary Table
+   =========================== */
+#sectorSummaryTable th {
+  background: #495057;
+  color: #fff;
+}
+
+/* ===========================
+   Buttons
+   =========================== */
+.btn-primary {
+  background: #0069d9;
+  border: none;
+}
+
+.btn-primary:hover {
+  background: #0056b3;
+}
+
+/* ===========================
+   Export Buttons
+   =========================== */
+#exportExcelBtn,
+#exportPdfBtn {
+  font-weight: 600;
+  box-shadow: 0px 4px 10px rgba(0,0,0,0.1);
+}
+
+/* ===========================
+   Dark Mode Button
+   =========================== */
+#darkModeBtn {
+  transition: 0.3s ease;
+}
+#darkModeBtn:hover {
+  transform: scale(1.05);
+}
