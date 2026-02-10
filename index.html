@@ -1,12 +1,21 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>📊 Portfolio Dashboard</title>
+  <title>📊 Trader Portfolio Dashboard</title>
 
   <!-- Bootstrap 5 -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
+
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"/>
+
+  <!-- Inter Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
   <link rel="stylesheet" href="style.css" />
 
   <!-- Chart.js -->
@@ -15,136 +24,323 @@
   <!-- SheetJS -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
-<body>
 
-  <!-- Navbar -->
-  <nav class="navbar navbar-dark bg-dark mb-3">
-    <div class="container-fluid">
-      <span class="navbar-brand mb-0 h1">📈 Interactive Stock Portfolio Dashboard</span> <!---By Prudhvi-->
-      <button class="btn btn-outline-light" id="darkModeBtn">🌙 Dark Mode</button>
+<body>
+  <!-- Top Bar -->
+  <nav class="navbar navbar-expand-lg topbar sticky-top">
+    <div class="container-fluid gap-2">
+      <div class="d-flex align-items-center gap-2">
+        <div class="brand-dot"></div>
+        <div>
+          <div class="brand-title">Trader Portfolio Dashboard</div>
+          <div class="brand-sub" id="fileStatus">No file loaded</div>
+        </div>
+      </div>
+
+      <div class="ms-auto d-flex align-items-center gap-2">
+        <button class="btn btn-ghost" id="openUploadBtn" type="button" title="Upload Excel">
+          <i class="bi bi-cloud-upload"></i>
+          <span class="d-none d-md-inline">Upload</span>
+        </button>
+
+        <button class="btn btn-ghost" id="exportExcelBtn" type="button" title="Export Excel">
+          <i class="bi bi-file-earmark-spreadsheet"></i>
+          <span class="d-none d-md-inline">Excel</span>
+        </button>
+
+        <button class="btn btn-primary-soft" id="exportPdfBtn" type="button" title="Export PDF">
+          <i class="bi bi-filetype-pdf"></i>
+          <span class="d-none d-md-inline">PDF</span>
+        </button>
+
+        <button class="btn btn-ghost" id="darkModeBtn" type="button" title="Toggle theme">
+          <i class="bi bi-moon-stars"></i>
+          <span class="d-none d-md-inline">Theme</span>
+        </button>
+
+        <button class="btn btn-ghost" type="button" data-bs-toggle="offcanvas" data-bs-target="#settingsPanel" aria-controls="settingsPanel" title="Settings">
+          <i class="bi bi-sliders2"></i>
+          <span class="d-none d-md-inline">Settings</span>
+        </button>
+      </div>
     </div>
   </nav>
 
-  <div class="container">
-
+  <div class="container-fluid page-wrap">
     <!-- Upload Zone -->
-    <div id="dropZone" class="border border-secondary rounded p-4 text-center mb-4">
-      <h4>📥 Drag & Drop Excel or Click to Upload</h4>
-      <input type="file" id="fileUpload" accept=".xlsx" class="form-control mt-3"/>
+    <div id="dropZone" class="dropzone mb-4">
+      <div class="dropzone-inner">
+        <div class="dropzone-icon"><i class="bi bi-file-earmark-arrow-up"></i></div>
+        <div>
+          <div class="dropzone-title">Drag & Drop Excel (.xlsx) here</div>
+          <div class="dropzone-sub">Or click to upload. Your filters + exports update instantly.</div>
+        </div>
+        <div class="ms-auto d-none d-md-flex align-items-center gap-2">
+          <span class="pill"><i class="bi bi-shield-check"></i> Local-only</span>
+          <span class="pill"><i class="bi bi-lightning-charge"></i> Fast</span>
+        </div>
+      </div>
+      <input type="file" id="fileUpload" accept=".xlsx" class="d-none"/>
     </div>
 
-    <!-- Filter Row -->
-    <div class="row align-items-center mb-3">
-      <div class="col-md-6">
-        <input type="text" id="searchInput" class="form-control" placeholder="🔍 Search stocks…">
+    <!-- Tabs -->
+    <div class="d-flex flex-wrap gap-2 align-items-center mb-3">
+      <ul class="nav nav-pills terminal-tabs" id="terminalTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+          <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#tabOverview" type="button" role="tab">
+            <i class="bi bi-speedometer2"></i> Overview
+          </button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tabHoldings" type="button" role="tab">
+            <i class="bi bi-table"></i> Holdings
+          </button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tabSectors" type="button" role="tab">
+            <i class="bi bi-pie-chart"></i> Sectors
+          </button>
+        </li>
+      </ul>
+
+      <div class="ms-auto d-flex flex-wrap gap-2 align-items-center">
+        <span class="mini-stat" id="asOfText"><i class="bi bi-clock"></i> As of: —</span>
+        <span class="mini-stat" id="viewCount"><i class="bi bi-funnel"></i> Showing: 0 rows</span>
       </div>
-      <div class="col-md-4">
-        <select id="sectorFilter" class="form-select">
-          <option value="">🔽 Filter by Sector</option>
+    </div>
+
+    <div class="tab-content">
+      <!-- OVERVIEW -->
+      <div class="tab-pane fade show active" id="tabOverview" role="tabpanel">
+        <!-- KPI cards -->
+        <div class="row g-3 mb-3">
+          <div class="col-12 col-md-6 col-xl-3">
+            <div class="kpi-card">
+              <div class="kpi-top">
+                <span class="kpi-label">Total Invested</span>
+                <span class="kpi-badge neutral"><i class="bi bi-wallet2"></i></span>
+              </div>
+              <div class="kpi-value">₹<span id="totalCost">0</span></div>
+              <div class="kpi-sub" id="kpiHoldings">Holdings: 0</div>
+            </div>
+          </div>
+
+          <div class="col-12 col-md-6 col-xl-3">
+            <div class="kpi-card">
+              <div class="kpi-top">
+                <span class="kpi-label">Current Value</span>
+                <span class="kpi-badge good"><i class="bi bi-graph-up"></i></span>
+              </div>
+              <div class="kpi-value">₹<span id="totalValuation">0</span></div>
+              <div class="kpi-sub" id="kpiSectors">Sectors: 0</div>
+            </div>
+          </div>
+
+          <div class="col-12 col-md-6 col-xl-3">
+            <div class="kpi-card">
+              <div class="kpi-top">
+                <span class="kpi-label">Unrealized P/L</span>
+                <span class="kpi-badge" id="plBadge"><i class="bi bi-activity"></i></span>
+              </div>
+              <div class="kpi-value">₹<span id="totalPL">0</span></div>
+              <div class="kpi-sub">Return: <span id="returnPct">0.00%</span></div>
+            </div>
+          </div>
+
+          <div class="col-12 col-md-6 col-xl-3">
+            <div class="kpi-card">
+              <div class="kpi-top">
+                <span class="kpi-label">View Controls</span>
+                <span class="kpi-badge neutral"><i class="bi bi-funnel"></i></span>
+              </div>
+              <div class="kpi-sub mt-1">Use filters in “Holdings” tab to slice & export.</div>
+              <button class="btn btn-outline-soft w-100 mt-2" id="resetBtn" type="button">
+                <i class="bi bi-arrow-counterclockwise"></i> Reset Filters
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Charts -->
+        <div class="row g-3">
+          <div class="col-12 col-xl-6">
+            <div class="panel">
+              <div class="panel-header">
+                <div>
+                  <div class="panel-title">Sector Allocation</div>
+                  <div class="panel-sub">Based on current value</div>
+                </div>
+              </div>
+              <div class="panel-body">
+                <div class="chart-wrap">
+                  <canvas id="sectorChart"></canvas>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-12 col-xl-6">
+            <div class="panel">
+              <div class="panel-header">
+                <div>
+                  <div class="panel-title">Top Movers (P/L)</div>
+                  <div class="panel-sub">Top 5 absolute gain/loss</div>
+                </div>
+              </div>
+              <div class="panel-body">
+                <div class="chart-wrap">
+                  <canvas id="performanceChart"></canvas>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- HOLDINGS -->
+      <div class="tab-pane fade" id="tabHoldings" role="tabpanel">
+        <div class="panel mb-3">
+          <div class="panel-header">
+            <div>
+              <div class="panel-title">Holdings</div>
+              <div class="panel-sub">Search, filter by sector, and export exactly what you see.</div>
+            </div>
+          </div>
+
+          <div class="panel-body">
+            <!-- Filters -->
+            <div class="row g-2 align-items-center mb-3">
+              <div class="col-12 col-md-5">
+                <div class="input-group terminal-input">
+                  <span class="input-group-text"><i class="bi bi-search"></i></span>
+                  <input type="text" id="searchInput" class="form-control" placeholder="Search stocks or sectors…">
+                </div>
+              </div>
+
+              <div class="col-12 col-md-3">
+                <select id="sectorFilter" class="form-select terminal-select">
+                  <option value="">Filter by Sector</option>
+                </select>
+              </div>
+
+              <div class="col-12 col-md-2">
+                <select id="plFilter" class="form-select terminal-select">
+                  <option value="all">All</option>
+                  <option value="gainers">Gainers</option>
+                  <option value="losers">Losers</option>
+                </select>
+              </div>
+
+              <div class="col-12 col-md-2 d-grid">
+                <button class="btn btn-outline-soft" id="applyBtn" type="button">
+                  <i class="bi bi-check2-circle"></i> Apply
+                </button>
+              </div>
+            </div>
+
+            <!-- Table -->
+            <div class="table-responsive terminal-table">
+              <table class="table align-middle mb-0" id="portfolioTable">
+                <thead>
+                  <tr>
+                    <th data-sort="stock">Stock</th>
+                    <th data-sort="sector">Sector</th>
+                    <th class="text-end" data-sort="qty">Qty</th>
+                    <th class="text-end" data-sort="avgCost">Avg Cost</th>
+                    <th class="text-end" data-sort="cost">Cost Value</th>
+                    <th class="text-end" data-sort="mktPrice">Market Price</th>
+                    <th class="text-end" data-sort="current">Current Value</th>
+                    <th class="text-end" data-sort="pl">P/L</th>
+                    <th class="text-end" data-sort="plPct">P/L %</th>
+                    <th class="text-end" data-sort="weight">Weight</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTORS -->
+      <div class="tab-pane fade" id="tabSectors" role="tabpanel">
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <div class="panel-title">Sector Summary</div>
+              <div class="panel-sub">Aggregated view of your portfolio by sector.</div>
+            </div>
+          </div>
+          <div class="panel-body">
+            <div class="table-responsive terminal-table">
+              <table class="table align-middle mb-0" id="sectorSummaryTable">
+                <thead>
+                  <tr>
+                    <th>Sector</th>
+                    <th class="text-end">Total Cost</th>
+                    <th class="text-end">Total Current Value</th>
+                    <th class="text-end">Total P/L</th>
+                    <th class="text-end">% of Portfolio</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+            <div class="hint mt-3">
+              <i class="bi bi-info-circle"></i>
+              Tip: Export PDF will include this table + charts + holdings table (filtered view).
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings Offcanvas -->
+  <div class="offcanvas offcanvas-end" tabindex="-1" id="settingsPanel" aria-labelledby="settingsPanelLabel">
+    <div class="offcanvas-header">
+      <h5 class="offcanvas-title" id="settingsPanelLabel"><i class="bi bi-sliders2"></i> Settings</h5>
+      <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body">
+      <div class="mb-3">
+        <label class="form-label">PDF Layout</label>
+        <select id="pdfLayout" class="form-select">
+          <option value="landscape" selected>Landscape (recommended)</option>
+          <option value="portrait">Portrait</option>
         </select>
+        <div class="form-text">Landscape fits tables better.</div>
       </div>
-      <div class="col-md-2 text-end">
-        <button class="btn btn-primary w-100" onclick="resetFilters()">Reset</button>
-      </div>
-    </div>
 
-    <!-- Summary Cards -->
-    <div class="row mb-4">
-      <div class="col-md-4 mb-3">
-        <div class="card summary-card border-info">
-          <div class="card-body text-center text-info">
-            <h5>Total Invested</h5>
-            <strong>₹<span id="totalCost">0</span></strong>
-          </div>
+      <div class="mb-3">
+        <label class="form-label">Top Movers count</label>
+        <input id="topN" type="number" class="form-control" min="3" max="20" value="5">
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Theme</label>
+        <div class="d-grid gap-2">
+          <button class="btn btn-outline-soft" id="themeLightBtn" type="button"><i class="bi bi-sun"></i> Light</button>
+          <button class="btn btn-outline-soft" id="themeDarkBtn" type="button"><i class="bi bi-moon-stars"></i> Dark</button>
         </div>
       </div>
-      <div class="col-md-4 mb-3">
-        <div class="card summary-card border-success">
-          <div class="card-body text-center text-success">
-            <h5>Current Value</h5>
-            <strong>₹<span id="totalValuation">0</span></strong>
-          </div>
-        </div>
-      </div>
-      <div class="col-md-4 mb-3">
-        <div class="card summary-card border-danger">
-          <div class="card-body text-center text-danger">
-            <h5>Unrealized P/L</h5>
-            <strong>₹<span id="totalPL">0</span></strong>
-          </div>
-        </div>
+
+      <hr class="my-4">
+
+      <div class="small text-muted">
+        Data stays in your browser. Exports are generated locally.
       </div>
     </div>
-
-    <!-- Charts -->
-    <div class="row mb-4">
-      <div class="col-lg-6 mb-3">
-        <div class="chart-container">
-          <canvas id="sectorChart"></canvas>
-        </div>
-      </div>
-      <div class="col-lg-6 mb-3">
-        <div class="chart-container">
-          <canvas id="performanceChart"></canvas>
-        </div>
-      </div>
-    </div>
-
-    <!-- Sector Summary Table -->
-    <div class="card mb-4">
-      <div class="card-header bg-secondary text-white">
-        <h5 class="mb-0">📋 Sector Summary</h5>
-      </div>
-      <div class="card-body">
-        <div class="table-responsive">
-          <table class="table table-bordered table-hover" id="sectorSummaryTable">
-            <thead class="table-dark">
-              <tr>
-                <th>Sector</th>
-                <th>Total Cost</th>
-                <th>Total Current Value</th>
-                <th>Total P/L</th>
-                <th>% of Portfolio</th>
-              </tr>
-            </thead>
-            <tbody></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <!-- Export Buttons -->
-    <div class="d-flex justify-content-end gap-2 mb-3">
-      <button class="btn btn-success" id="exportExcelBtn">📥 Export Excel</button>
-      <button class="btn btn-danger" id="exportPdfBtn">📄 Export PDF</button>
-    </div>
-
-    <!-- Holdings Table -->
-    <div class="table-responsive">
-      <table class="table table-striped table-hover" id="portfolioTable">
-        <thead class="table-dark">
-          <tr>
-            <th onclick="sortTable(0)">Stock</th>
-            <th onclick="sortTable(1)">Sector</th>
-            <th onclick="sortTable(2)">Qty</th>
-            <th onclick="sortTable(3)">Avg Cost</th>
-            <th onclick="sortTable(4)">Cost Value</th>
-            <th onclick="sortTable(5)">Market Price</th>
-            <th onclick="sortTable(6)">Current Value</th>
-            <th onclick="sortTable(7)">P/L</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </div>
-
   </div>
 
   <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- jsPDF + autoTable -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
-  <script src="script.js"></script>
 
+  <script src="script.js"></script>
 </body>
 </html>
